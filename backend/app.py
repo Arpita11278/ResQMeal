@@ -2,7 +2,9 @@ from flask import Flask, request, jsonify
 import config
 from database import mysql
 from routes.auth import auth_bp
-from routes.restaurant import restaurant_bp  
+from routes.restaurant import restaurant_bp
+from routes.food import food_bp
+from routes.ngo import ngo_bp
 
 app = Flask(__name__)
 
@@ -15,6 +17,8 @@ mysql.init_app(app)
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(restaurant_bp) 
+app.register_blueprint(food_bp)
+app.register_blueprint(ngo_bp)
 
 @app.route("/")
 def home():
