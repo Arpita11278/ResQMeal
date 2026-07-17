@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import config
 from database import mysql
 from routes.auth import auth_bp
+from routes.restaurant import restaurant_bp  
 
 app = Flask(__name__)
 
@@ -13,6 +14,7 @@ app.config["MYSQL_DB"] = config.MYSQL_DB
 mysql.init_app(app)
 
 app.register_blueprint(auth_bp)
+app.register_blueprint(restaurant_bp) 
 
 @app.route("/")
 def home():
