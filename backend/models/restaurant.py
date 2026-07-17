@@ -82,3 +82,26 @@ def get_all_restaurants(mysql):
             "closing_time": row[8]
         })
     return restaurants
+
+def get_restaurant_by_user(mysql, user_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("""
+        SELECT restaurant_id, user_id, restaurant_name, owner_name, phone, address, city, opening_time, closing_time 
+        FROM restaurants WHERE user_id=%s
+    """, (user_id,))
+    row = cursor.fetchone()
+    cursor.close()
+    
+    if row:
+        return {
+            "restaurant_id": row[0],
+            "user_id": row[1],
+            "restaurant_name": row[2],
+            "owner_name": row[3],
+            "phone": row[4],
+            "address": row[5],
+            "city": row[6],
+            "opening_time": row[7],
+            "closing_time": row[8]
+        }
+    return None

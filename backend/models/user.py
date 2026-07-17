@@ -32,12 +32,13 @@ def verify_user(mysql, email, password):
     
     # Check if a user with this email and password exists
     cursor.execute(
-        "SELECT * FROM users WHERE email=%s AND password=%s",
+        "SELECT user_id, name, role FROM users WHERE email=%s AND password=%s",
         (email, password)
     )
     
     user = cursor.fetchone()
     cursor.close()
     
-    # If user is found, return True, otherwise False
-    return user is not None
+    if user:
+        return {"user_id": user[0], "name": user[1], "role": user[2]}
+    return None

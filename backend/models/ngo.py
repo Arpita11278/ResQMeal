@@ -58,3 +58,12 @@ def create_ngo_profile(mysql, data):
         return False, "This user already has an NGO profile!"
     except Exception as e:
         return False, str(e)
+
+def get_ngo_by_user(mysql, user_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT ngo_id, user_id, ngo_name, capacity, location FROM ngo WHERE user_id = %s", (user_id,))
+    row = cursor.fetchone()
+    cursor.close()
+    if row:
+        return {"ngo_id": row[0], "user_id": row[1], "ngo_name": row[2], "capacity": row[3], "location": row[4]}
+    return None

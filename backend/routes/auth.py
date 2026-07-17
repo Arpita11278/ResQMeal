@@ -37,11 +37,11 @@ def login():
     password = data["password"]
 
     # Requirements 5 & 6: Verify email and password in the database
-    is_valid = verify_user(mysql, email, password)
+    user_data = verify_user(mysql, email, password)
 
     # Requirement 7: Successful login (Status 200)
-    if is_valid:
-        return jsonify({"message": "Login Successful"}), 200
+    if user_data:
+        return jsonify({"message": "Login Successful", "user": user_data}), 200
         
     # Requirement 8: Invalid login (Status 401)
     else:

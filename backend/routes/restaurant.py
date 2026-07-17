@@ -4,7 +4,8 @@ from models.restaurant import (
     create_restaurant_profile, 
     get_restaurant_by_id, 
     update_restaurant_profile, 
-    get_all_restaurants
+    get_all_restaurants,
+    get_restaurant_by_user
 )
 
 restaurant_bp = Blueprint("restaurant", __name__)

@@ -62,3 +62,31 @@ def delete_food(mysql, food_id):
     rows_affected = cursor.rowcount
     cursor.close()
     return rows_affected > 0
+
+def update_food_status(mysql, food_id, status):
+    cursor = mysql.connection.cursor()
+    cursor.execute("UPDATE food SET status=%s WHERE food_id=%s", (status, food_id))
+    mysql.connection.commit()
+    rows_affected = cursor.rowcount
+    cursor.close()
+    return rows_affected > 0
+
+def get_food_by_restaurant(mysql, restaurant_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM food WHERE restaurant_id = %s", (restaurant_id,))
+    rows = cursor.fetchall()
+    cursor.close()
+    
+    foods = []
+    for row in rows:
+        foods.append({
+            "food_id": row[0],
+            "restaurant_id": row[1],
+            "food_name": row[2],
+            "quantity": row[3],
+            "food_type": row[4],
+            "cooked_at": row[5],
+            "expiry_time": row[6],
+            "status": row[7]
+        })
+    return foods

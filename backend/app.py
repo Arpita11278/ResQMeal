@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import config
 from database import mysql
 from routes.auth import auth_bp
@@ -9,6 +10,7 @@ from routes.delivery import delivery_bp
 from routes.admin import admin_bp
 
 app = Flask(__name__)
+CORS(app)
 
 app.config["MYSQL_HOST"] = config.MYSQL_HOST
 app.config["MYSQL_USER"] = config.MYSQL_USER
@@ -38,31 +40,3 @@ def users():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-@app.route("/login", methods=["POST"])
-def login():
-
-    data = request.get_json()
-
-    email = data["email"]
-    password = data["password"]
-
-    cursor = mysql.connection.cursor()
-
-    cursor.execute(
-        "SELECT * FROM users WHERE email=%s AND password=%s",
-        (email, password)
-    )
-
-    user = cursor.fetchone()
-
-    cursor.close()
-
-    if user:
-        return jsonify({
-            "message": "Login Successful"
-        })
-
-    return jsonify({
-        "message": "Invalid Email or Password"
-    }), 401

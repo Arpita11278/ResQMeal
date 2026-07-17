@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database import mysql
-from models.ngo import accept_food_donation, get_ngo_history, create_ngo_profile
+from models.ngo import accept_food_donation, get_ngo_history, create_ngo_profile, get_ngo_by_user
 
 ngo_bp = Blueprint("ngo", __name__)
 
@@ -35,3 +35,13 @@ def add_ngo_profile():
         return jsonify({"error": err_msg}), 400
         
     return jsonify({"message": "NGO Profile Created Successfully"}), 201
+
+@ngo_bp.route("/ngo/by_user/<int:user_id>", methods=["GET"])
+def by_user(user_id):
+    try:
+        profile = get_ngo_by_user(mysql, user_id)
+        if profile:
+            return jsonify(profile), 200
+        return jsonify({"error": "NGO profile not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

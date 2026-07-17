@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ResQMeal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">ResQMeal ✨</div>
+        <ul class="nav-links">
+            <li><a href="#" id="userNameDisplay">Welcome!</a></li>
+            <li><a href="#" onclick="logout()" style="color: #ef4444;">Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Dashboard Container -->
+    <div class="container" style="padding: 20px;">
+        <div class="dashboard-card">
+            <h2 id="welcomeText">Dashboard</h2>
+            <p class="subtitle" id="roleText">Loading your role...</p>
+            
+            <div id="dashboardContent" style="margin-top: 30px;">
+                <!-- Content will be injected here -->
+            </div>
+            
+            <div id="dynamicArea" style="margin-top:30px;">
+                <!-- Forms and Results injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:5000";
+        const userStr = localStorage.getItem("user");
+        let user = null;
+
+        if (!userStr) {
+            window.location.href = "index.html";
+        } else {
+            user = JSON.parse(userStr);
+            document.getElementById("userNameDisplay").innerText = `Hi, ${user.name}`;
+            document.getElementById("welcomeText").innerText = `Welcome, ${user.name}`;
+            document.getElementById("roleText").innerText = `Role: ${user.role}`;
+            loadRoleDashboard();
+        }
+
+        async function loadRoleDashboard() {
+            const content = document.getElementById("dashboardContent");
+            
+            if (user.role === "Restaurant") {
+                let res = await fetch(`${API}/restaurant/by_user/${user.user_id}`);
+                if (!res.ok) {
+                    content.innerHTML = `
+                        <div class="stat-card" style="display:block; text-align:left;">
+                            <h3 style="color:var(--warning); margin-bottom:5px;">Complete Your Profile</h3>
+                            <p style="margin-bottom:20px; color:#94a3b8;"><small>Setup your restaurant details before donating food.</small></p>
+                            <form onsubmit="createRestaurantProfile(event)">
+                                <div class="input-group"><label>Restaurant Name</label><input type="text" id="rName" required></div>
+                                <div class="input-group"><label>Owner Name</label><input type="text" id="rOwner" required></div>
+                                <div class="input-group"><label>Phone</label><input type="text" id="rPhone" required></div>
+                                <div class="input-group"><label>Address</label><input type="text" id="rAddress" required></div>
+                                <div class="input-group"><label>City</label><input type="text" id="rCity" required></div>
+                                <button type="submit" class="btn-primary full-width">Save Profile</button>
+                            </form>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                            <button class="btn-primary" onclick="showDonateForm()">+ Donate Food</button>
+                            <button class="btn-secondary" onclick="viewMyDonations()">View My Donations</button>
+                        </div>
+                    `;
+                }
+            } else if (user.role === "NGO") {
+                let res = await fetch(`${API}/ngo/by_user/${user.user_id}`);
+                if (!res.ok) {
+                    content.innerHTML = `
+                        <div class="stat-card" style="display:block; text-align:left;">
+                            <h3 style="color:var(--warning); margin-bottom:5px;">Complete Your Profile</h3>
+                            <p style="margin-bottom:20px; color:#94a3b8;"><small>Setup your NGO details before you can claim food.</small></p>
+                            <form onsubmit="createNGOProfile(event)">
+                                <div class="input-group"><label>NGO Name</label><input type="text" id="nName" required></div>
+                                <div class="input-group"><label>Capacity (Persons)</label><input type="number" id="nCap" required></div>
+                                <div class="input-group"><label>Location/Address</label><input type="text" id="nLoc" required></div>
+                                <button type="submit" class="btn-primary full-width">Save Profile</button>
+                            </form>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                            <button class="btn-primary" onclick="fetchAvailableFood()">🔍 Find Available Food</button>
+                            <button class="btn-secondary" onclick="viewNGOHistory()">My History</button>
+                        </div>
+                    `;
+                }
+            } else if (user.role === "Delivery") {
+                content.innerHTML = `
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <button class="btn-primary" onclick="fetchMyTasks()">📦 View My Deliveries</button>
+                    </div>
+                `;
+            } else if (user.role === "Admin") {
+                content.innerHTML = `
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <button class="btn-primary" onclick="fetchAnalytics()">📊 View System Analytics</button>
+                        <button class="btn-secondary" onclick="viewAllUsers()">👥 Manage Users</button>
+                    </div>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+        }
+
+        // ==========================================
+        // PROFILE CREATION LOGIC
+        // ==========================================
+        async function createRestaurantProfile(e) {
+            e.preventDefault();
+            const bodyData = {
+                user_id: user.user_id,
+                restaurant_name: document.getElementById('rName').value,
+                owner_name: document.getElementById('rOwner').value,
+                phone: document.getElementById('rPhone').value,
+                address: document.getElementById('rAddress').value,
+                city: document.getElementById('rCity').value,
+                opening_time: '08:00:00',
+                closing_time: '23:00:00'
+            };
+            try {
+                let res = await fetch(`${API}/restaurant/profile`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(bodyData)
+                });
+                if(res.ok) {
+                    alert("Profile Created Successfully!");
+                    loadRoleDashboard(); 
+                } else alert("Failed to create profile.");
+            } catch(err) { alert("Server error"); }
+        }
+
+        async function createNGOProfile(e) {
+            e.preventDefault();
+            const bodyData = {
+                user_id: user.user_id,
+                ngo_name: document.getElementById('nName').value,
+                capacity: document.getElementById('nCap').value,
+                location: document.getElementById('nLoc').value
+            };
+            try {
+                let res = await fetch(`${API}/ngo/profile`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(bodyData)
+                });
+                if(res.ok) {
+                    alert("Profile Created Successfully!");
+                    loadRoleDashboard();
+                } else alert("Failed to create profile.");
+            } catch(err) { alert("Server error"); }
+        }
+
+        // ==========================================
+        // RESTAURANT LOGIC
+        // ==========================================
+        function showDonateForm() {
+            document.getElementById('dynamicArea').innerHTML = `
+                <h3 style="margin-bottom:20px; color:var(--primary);">Donate Food Details</h3>
+                <form onsubmit="submitDonation(event)">
+                    <div class="input-group"><label>Food Name</label><input type="text" id="fName" required></div>
+                    <div class="input-group"><label>Quantity (Persons)</label><input type="number" id="fQty" required></div>
+                    <div class="input-group">
+                        <label>Food Type</label>
+                        <select id="fType"><option>Veg</option><option>Non-Veg</option></select>
+                    </div>
+                    <div class="input-group"><label>Expiry Time</label><input type="datetime-local" id="fExpiry" required></div>
+                    <button type="submit" class="btn-primary full-width">Submit Donation</button>
+                </form>
+            `;
+        }
+
+        async function submitDonation(e) {
+            e.preventDefault();
+            try {
+                let resProfile = await fetch(`${API}/restaurant/by_user/${user.user_id}`);
+                if(!resProfile.ok) return alert("You must create a Restaurant Profile first via Thunder Client!");
+                let profile = await resProfile.json();
+
+                const expiry = document.getElementById('fExpiry').value.replace('T',' ')+':00';
+                let now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                const cookedAt = now.toISOString().slice(0, 19).replace('T', ' ');
+
+                let response = await fetch(`${API}/food/donate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        restaurant_id: profile.restaurant_id, food_name: document.getElementById('fName').value,
+                        quantity: document.getElementById('fQty').value, food_type: document.getElementById('fType').value,
+                        cooked_at: cookedAt, expiry_time: expiry
+                    })
+                });
+                if(response.ok) {
+                    alert("Food Donated Successfully!");
+                    document.getElementById('dynamicArea').innerHTML = '';
+                } else alert("Failed to donate.");
+            } catch(err) { alert("Error occurred."); }
+        }
+
+        async function viewMyDonations() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Loading your donations...</p>';
+            try {
+                let resProfile = await fetch(`${API}/restaurant/by_user/${user.user_id}`);
+                let profile = await resProfile.json();
+                
+                let res = await fetch(`${API}/food/restaurant/${profile.restaurant_id}`);
+                let foods = await res.json();
+                let html = '<h3 style="margin-bottom:20px;">Your Donations</h3>';
+                foods.forEach(f => {
+                    html += `<div class="food-card">
+                        <div><strong style="color:var(--primary); font-size:18px;">${f.food_name}</strong><br>
+                        <small>Qty: ${f.quantity} | Status: ${f.status}</small></div>
+                    </div>`;
+                });
+                document.getElementById('dynamicArea').innerHTML = html || "<p>No donations found.</p>";
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error fetching data.</p>'; }
+        }
+
+        // ==========================================
+        // NGO LOGIC
+        // ==========================================
+        async function fetchAvailableFood() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Searching for food...</p>';
+            try {
+                let res = await fetch(`${API}/food/available`);
+                let foods = await res.json();
+                let html = '<h3 style="margin-bottom:20px;">Available Food</h3>';
+                foods.forEach(f => {
+                    html += `<div class="food-card">
+                        <div><strong style="color:var(--primary); font-size:18px;">${f.food_name}</strong><br>
+                        <small>Qty: ${f.quantity} | Type: ${f.food_type}</small></div>
+                        <button class="btn-primary" onclick="acceptFood(${f.food_id})" style="padding:8px 15px; font-size:14px;">Accept</button>
+                    </div>`;
+                });
+                document.getElementById('dynamicArea').innerHTML = html || "<p>No food available right now.</p>";
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error fetching food.</p>'; }
+        }
+
+        async function acceptFood(food_id) {
+            try {
+                let ngoProfile = await fetch(`${API}/ngo/by_user/${user.user_id}`);
+                if(!ngoProfile.ok) return alert("You must create an NGO Profile first via Thunder Client!");
+                let profile = await ngoProfile.json();
+
+                let res = await fetch(`${API}/ngo/accept`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ food_id: food_id, ngo_id: profile.ngo_id })
+                });
+                if(res.ok) {
+                    alert("Food Accepted! A delivery request has been generated.");
+                    fetchAvailableFood(); // refresh list
+                }
+            } catch(err) { alert("Failed to accept."); }
+        }
+
+        async function viewNGOHistory() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Loading your history...</p>';
+            try {
+                let ngoProfile = await fetch(`${API}/ngo/by_user/${user.user_id}`);
+                if(!ngoProfile.ok) return alert("You must create an NGO Profile first!");
+                let profile = await ngoProfile.json();
+                
+                let res = await fetch(`${API}/ngo/history/${profile.ngo_id}`);
+                let history = await res.json();
+                let html = '<h3 style="margin-bottom:20px;">Your Claim History</h3>';
+                history.forEach(h => {
+                    html += `<div class="food-card">
+                        <div><strong style="color:var(--primary); font-size:18px;">${h.food_name}</strong><br>
+                        <small>Status: ${h.status}</small></div>
+                    </div>`;
+                });
+                document.getElementById('dynamicArea').innerHTML = html || "<p>No history found.</p>";
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error fetching history.</p>'; }
+        }
+
+        // ==========================================
+        // DELIVERY LOGIC
+        // ==========================================
+        async function fetchMyTasks() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Loading your deliveries...</p>';
+            try {
+                let res = await fetch(`${API}/delivery/tasks/${user.user_id}`);
+                let tasks = await res.json();
+                let html = '<h3 style="margin-bottom:20px;">Your Active Deliveries</h3>';
+                tasks.forEach(t => {
+                    html += `<div class="food-card" style="display:block;">
+                        <strong style="color:var(--primary); font-size:18px;">Food: ${t.food_name}</strong><br>
+                        <p style="margin:10px 0;"><small>From: ${t.pickup_address}<br>To: ${t.drop_address}</small></p>
+                        <p>Status: <b>${t.status}</b></p>
+                        <div style="margin-top:15px; display:flex; gap:10px;">
+                            <button class="btn-secondary" onclick="updateDelivery(${t.delivery_id}, 'Picked Up')">Mark Picked Up</button>
+                            <button class="btn-primary" onclick="updateDelivery(${t.delivery_id}, 'Delivered')">Mark Delivered</button>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('dynamicArea').innerHTML = html || "<p>No assigned deliveries.</p>";
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error fetching tasks.</p>'; }
+        }
+
+        async function updateDelivery(id, status) {
+            try {
+                let res = await fetch(`${API}/delivery/update/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status: status })
+                });
+                if(res.ok) {
+                    alert(`Delivery updated to ${status}`);
+                    fetchMyTasks();
+                }
+            } catch(err) { alert("Failed to update status."); }
+        }
+
+        // ==========================================
+        // ADMIN LOGIC
+        // ==========================================
+        async function fetchAnalytics() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Loading analytics...</p>';
+            try {
+                let res = await fetch(`${API}/admin/analytics`);
+                let data = await res.json();
+                let html = `
+                    <h3 style="margin-bottom:20px;">System Overview</h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div class="stat-card" style="display:block; text-align:center;">
+                            <h1>${data.total_users}</h1><p>Total Users</p>
+                        </div>
+                        <div class="stat-card" style="display:block; text-align:center;">
+                            <h1>${data.total_food_donated}</h1><p>Food Donated</p>
+                        </div>
+                        <div class="stat-card" style="display:block; text-align:center;">
+                            <h1>${data.total_requests_accepted}</h1><p>NGO Claims</p>
+                        </div>
+                        <div class="stat-card" style="display:block; text-align:center;">
+                            <h1>${data.total_deliveries}</h1><p>Deliveries</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('dynamicArea').innerHTML = html;
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error fetching stats.</p>'; }
+        }
+        
+        async function viewAllUsers() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Loading users...</p>';
+            try {
+                let res = await fetch(`${API}/admin/users`);
+                let users = await res.json();
+                let html = '<h3 style="margin-bottom:20px;">All Users</h3>';
+                users.forEach(u => {
+                    html += `<div class="food-card">
+                        <div><strong>${u.name}</strong> (${u.role})<br><small>${u.email}</small></div>
+                        <button class="btn-primary" style="background:var(--danger);" onclick="deleteUser(${u.user_id})">Delete</button>
+                    </div>`;
+                });
+                document.getElementById('dynamicArea').innerHTML = html;
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error loading users.</p>'; }
+        }
+
+        async function deleteUser(id) {
+            if(!confirm("Are you sure? This will delete all their data too!")) return;
+            try {
+                let res = await fetch(`${API}/admin/user/${id}`, { method: 'DELETE' });
+                if(res.ok) { alert("User deleted."); viewAllUsers(); }
+            } catch(err) { alert("Failed to delete."); }
+        }
+    </script>
+</body>
+</html>
