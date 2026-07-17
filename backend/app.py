@@ -28,3 +28,31 @@ def users():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+@app.route("/login", methods=["POST"])
+def login():
+
+    data = request.get_json()
+
+    email = data["email"]
+    password = data["password"]
+
+    cursor = mysql.connection.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE email=%s AND password=%s",
+        (email, password)
+    )
+
+    user = cursor.fetchone()
+
+    cursor.close()
+
+    if user:
+        return jsonify({
+            "message": "Login Successful"
+        })
+
+    return jsonify({
+        "message": "Invalid Email or Password"
+    }), 401

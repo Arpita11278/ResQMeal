@@ -26,3 +26,18 @@ def create_user(mysql, name, email, password, role):
     cursor.close()
 
     return {"message": "User Registered Successfully"}
+
+def verify_user(mysql, email, password):
+    cursor = mysql.connection.cursor()
+    
+    # Check if a user with this email and password exists
+    cursor.execute(
+        "SELECT * FROM users WHERE email=%s AND password=%s",
+        (email, password)
+    )
+    
+    user = cursor.fetchone()
+    cursor.close()
+    
+    # If user is found, return True, otherwise False
+    return user is not None
