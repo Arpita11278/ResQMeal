@@ -20,6 +20,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const btn = e.target.querySelector('button');
+    const oldText = btn.innerText;
+    btn.innerText = "Logging in...";
     
     try {
         // Send request to Flask API
@@ -34,17 +37,18 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (response.ok || data.message === "Login Successful") {
-            alert("Login Successful! Welcome to ResQMeal.");
             // Save user details to localStorage so dashboard can use it
             localStorage.setItem("user", JSON.stringify(data.user));
-            // Redirect to Dashboard
+            // Redirect to Dashboard seamlessly
             window.location.href = "dashboard.html";
         } else {
             alert(data.message || "Invalid Credentials");
+            btn.innerText = oldText;
         }
     } catch (error) {
         console.error("Error:", error);
         alert("Server is not running! Please start python app.py");
+        btn.innerText = oldText;
     }
 });
 
@@ -56,6 +60,9 @@ document.getElementById('signupForm')?.addEventListener('submit', async (e) => {
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPassword').value;
     const role = document.getElementById('signupRole').value;
+    const btn = e.target.querySelector('button');
+    const oldText = btn.innerText;
+    btn.innerText = "Creating Account...";
     
     try {
         const response = await fetch(`${API_URL}/signup`, {
@@ -69,13 +76,16 @@ document.getElementById('signupForm')?.addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (response.ok || data.message === "User Registered Successfully") {
-            alert("Signup Successful! Please Login now.");
+            // Instantly show login without alert
+            btn.innerText = oldText;
             showSection('login');
         } else {
             alert(data.error || data.message || "Signup Failed");
+            btn.innerText = oldText;
         }
     } catch (error) {
         console.error("Error:", error);
         alert("Server is not running! Please start python app.py");
+        btn.innerText = oldText;
     }
 });
