@@ -2,9 +2,10 @@ def assign_delivery(mysql, data):
     cursor = mysql.connection.cursor()
     cursor.execute(
         """
-        INSERT INTO deliveries (request_id, partner_id, status)
-        VALUES (%s, %s, 'Assigned')
-        """, (data['request_id'], data['partner_id'])
+        UPDATE deliveries
+        SET partner_id = %s, status = 'Assigned', assigned_at = NOW()
+        WHERE delivery_id = %s
+        """, (data['partner_id'], data['delivery_id'])
     )
     mysql.connection.commit()
     cursor.close()
@@ -12,9 +13,10 @@ def assign_delivery(mysql, data):
 
 def update_delivery_status(mysql, delivery_id, status, time_field, time_value):
     cursor = mysql.connection.cursor()
-    # Dynamically update either pickup_time or delivery_time based on status
-    query = f"UPDATE deliveries SET status = %s, {time_field} = %s WHERE delivery_id = %s"
-    cursor.execute(query, (status, time_value, delivery_id))
+    # In Clever Cloud schema, we don't have pickup_time or delivery_time columns, only assigned_at.
+    # So we'll just update the status for now.
+    query = "UPDATE deliveries SET status = %s WHERE delivery_id = %s"
+    cursor.execute(query, (status, delivery_id))
     mysql.connection.commit()
     rows = cursor.rowcount
     cursor.close()
@@ -22,7 +24,6 @@ def update_delivery_status(mysql, delivery_id, status, time_field, time_value):
 
 def get_delivery_tasks(mysql, partner_id):
     cursor = mysql.connection.cursor()
-    # Complex JOIN query to provide full delivery details to the Delivery Partner
     cursor.execute(
         """
         SELECT 
@@ -32,10 +33,9 @@ def get_delivery_tasks(mysql, partner_id):
             n.ngo_name, n.location AS drop_address,
             d.status
         FROM deliveries d
-        JOIN requests req ON d.request_id = req.request_id
-        JOIN food f ON req.food_id = f.food_id
+        JOIN food f ON d.food_id = f.food_id
         JOIN restaurants rest ON f.restaurant_id = rest.restaurant_id
-        JOIN ngo n ON req.ngo_id = n.ngo_id
+        JOIN ngo n ON d.ngo_id = n.ngo_id
         WHERE d.partner_id = %s
         """, (partner_id,)
     )
