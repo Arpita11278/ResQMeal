@@ -28,21 +28,16 @@ def available_deliveries():
 @delivery_bp.route("/delivery/update/<int:delivery_id>", methods=["PUT"])
 def update_status(delivery_id):
     data = request.get_json()
-    if "status" not in data or "time" not in data:
-        return jsonify({"error": "status and time are required in JSON body"}), 400
+    if "status" not in data:
+        return jsonify({"error": "status is required in JSON body"}), 400
         
     status = data["status"]
-    time_value = data["time"]
     
-    if status == "Picked Up":
-        time_field = "pickup_time"
-    elif status == "Delivered":
-        time_field = "delivery_time"
-    else:
+    if status not in ["Picked Up", "Delivered"]:
         return jsonify({"error": "Invalid status. Must be 'Picked Up' or 'Delivered'"}), 400
         
     try:
-        updated = update_delivery_status(mysql, delivery_id, status, time_field, time_value)
+        updated = update_delivery_status(mysql, delivery_id, status, None, None)
         if updated:
             return jsonify({"message": f"Status successfully updated to {status}"}), 200
         return jsonify({"error": "Delivery task not found"}), 404
