@@ -51,3 +51,13 @@ def update_profile(id):
 def get_all():
     restaurants = get_all_restaurants(mysql)
     return jsonify(restaurants), 200
+
+@restaurant_bp.route("/restaurant/by_user/<int:user_id>", methods=["GET"])
+def by_user(user_id):
+    try:
+        profile = get_restaurant_by_user(mysql, user_id)
+        if profile:
+            return jsonify(profile), 200
+        return jsonify({"error": "Restaurant profile not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
