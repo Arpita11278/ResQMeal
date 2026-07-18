@@ -38,8 +38,8 @@ def get_restaurant_by_id(mysql, restaurant_id):
             "phone": row[4],
             "address": row[5],
             "city": row[6],
-            "opening_time": row[7],
-            "closing_time": row[8]
+            "opening_time": str(row[7]),
+            "closing_time": str(row[8])
         }
     return None
 
@@ -78,8 +78,8 @@ def get_all_restaurants(mysql):
             "phone": row[4],
             "address": row[5],
             "city": row[6],
-            "opening_time": row[7],
-            "closing_time": row[8]
+            "opening_time": str(row[7]),
+            "closing_time": str(row[8])
         })
     return restaurants
 
@@ -101,7 +101,7 @@ def get_restaurant_by_user(mysql, user_id):
             "phone": row[4],
             "address": row[5],
             "city": row[6],
-            "opening_time": row[7],
-            "closing_time": row[8]
+            "opening_time": str(row[7]),
+            "closing_time": str(row[8])
         }
     return None
