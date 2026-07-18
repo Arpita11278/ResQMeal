@@ -5,7 +5,7 @@ from models.food import donate_food, get_available_food, update_food_status, del
 food_bp = Blueprint("food", __name__)
 
 @food_bp.route("/food/donate", methods=["POST"])
-def donate_food():
+def add_food_donation():
     data = request.get_json()
     
     required_fields = ["restaurant_id", "food_name", "quantity", "food_type", "cooked_at", "expiry_time"]
