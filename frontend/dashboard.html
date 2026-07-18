@@ -103,7 +103,8 @@
             } else if (user.role === "Delivery") {
                 content.innerHTML = `
                     <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                        <button class="btn-primary" onclick="fetchMyTasks()">📦 View My Deliveries</button>
+                        <button class="btn-primary" onclick="fetchAvailableDeliveries()">🔍 Find Available Deliveries</button>
+                        <button class="btn-secondary" onclick="fetchMyTasks()">📦 View My Deliveries</button>
                     </div>
                 `;
             } else if (user.role === "Admin") {
@@ -292,6 +293,37 @@
         // ==========================================
         // DELIVERY LOGIC
         // ==========================================
+        async function fetchAvailableDeliveries() {
+            document.getElementById('dynamicArea').innerHTML = '<p>Loading available deliveries...</p>';
+            try {
+                let res = await fetch(`${API}/delivery/available`);
+                let tasks = await res.json();
+                let html = '<h3 style="margin-bottom:20px;">Deliveries Ready for Pickup</h3>';
+                tasks.forEach(t => {
+                    html += `<div class="food-card" style="display:block;">
+                        <strong style="color:var(--primary); font-size:18px;">Food: ${t.food_name}</strong><br>
+                        <p style="margin:10px 0;"><small>From: ${t.pickup_from} (${t.pickup_address})<br>To: ${t.drop_to} (${t.drop_address})</small></p>
+                        <button class="btn-primary" onclick="claimDelivery(${t.delivery_id})">Claim Delivery</button>
+                    </div>`;
+                });
+                document.getElementById('dynamicArea').innerHTML = html || "<p>No deliveries available right now.</p>";
+            } catch(err) { document.getElementById('dynamicArea').innerHTML = '<p>Error fetching available deliveries.</p>'; }
+        }
+
+        async function claimDelivery(delivery_id) {
+            try {
+                let res = await fetch(`${API}/delivery/assign`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ delivery_id: delivery_id, partner_id: user.user_id })
+                });
+                if(res.ok) {
+                    alert("Delivery claimed successfully! You can view it in 'View My Deliveries'.");
+                    fetchAvailableDeliveries(); // refresh list
+                } else { alert("Failed to claim delivery."); }
+            } catch(err) { alert("Error claiming delivery."); }
+        }
+
         async function fetchMyTasks() {
             document.getElementById('dynamicArea').innerHTML = '<p>Loading your deliveries...</p>';
             try {

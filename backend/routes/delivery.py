@@ -7,12 +7,21 @@ delivery_bp = Blueprint("delivery", __name__)
 @delivery_bp.route("/delivery/assign", methods=["POST"])
 def assign():
     data = request.get_json()
-    if "request_id" not in data or "partner_id" not in data:
-        return jsonify({"error": "request_id and partner_id are required"}), 400
+    if "delivery_id" not in data or "partner_id" not in data:
+        return jsonify({"error": "delivery_id and partner_id are required"}), 400
         
     try:
         assign_delivery(mysql, data)
         return jsonify({"message": "Delivery Assigned Successfully!"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@delivery_bp.route("/delivery/available", methods=["GET"])
+def available_deliveries():
+    try:
+        from models.delivery import get_available_deliveries
+        tasks_list = get_available_deliveries(mysql)
+        return jsonify(tasks_list), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
