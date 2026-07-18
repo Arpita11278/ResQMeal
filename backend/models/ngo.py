@@ -1,14 +1,19 @@
 def accept_food_donation(mysql, food_id, ngo_id):
     cursor = mysql.connection.cursor()
-    # 1. Update the food status from 'Available' to 'Accepted'
-    cursor.execute("UPDATE food SET status = 'Accepted' WHERE food_id = %s", (food_id,))
+    # 1. Update the food status from 'Available' to 'Claimed'
+    cursor.execute("UPDATE food SET status = 'Claimed' WHERE food_id = %s", (food_id,))
     
-    # 2. Insert a record into requests table to track who accepted it
+    # 2. Create a delivery record
     cursor.execute(
         """
-        INSERT INTO requests (food_id, ngo_id, status)
-        VALUES (%s, %s, 'Accepted')
-        """, (food_id, ngo_id)
+        INSERT INTO deliveries (food_id, ngo_id, pickup_address, drop_address, status)
+        SELECT %s, %s, r.address, n.location, 'Pending'
+        FROM food f
+        JOIN restaurants r ON f.restaurant_id = r.restaurant_id
+        JOIN ngo n ON n.ngo_id = %s
+        WHERE f.food_id = %s
+        """,
+        (food_id, ngo_id, ngo_id, food_id)
     )
     mysql.connection.commit()
     cursor.close()
@@ -16,27 +21,27 @@ def accept_food_donation(mysql, food_id, ngo_id):
 
 def get_ngo_history(mysql, ngo_id):
     cursor = mysql.connection.cursor()
-    # Using SQL JOIN to fetch details from 3 tables: requests, food, and restaurants!
-    cursor.execute(
-        """
-        SELECT req.request_id, f.food_name, r.restaurant_name, req.status, req.request_date 
-        FROM requests req
-        JOIN food f ON req.food_id = f.food_id
+    cursor.execute("""
+        SELECT d.delivery_id, f.food_name, f.quantity, d.status, p.name as partner_name, d.assigned_at, r.restaurant_name
+        FROM deliveries d
+        JOIN food f ON d.food_id = f.food_id
         JOIN restaurants r ON f.restaurant_id = r.restaurant_id
-        WHERE req.ngo_id = %s
-        """, (ngo_id,)
-    )
+        LEFT JOIN users p ON d.partner_id = p.user_id
+        WHERE d.ngo_id = %s
+    """, (ngo_id,))
     rows = cursor.fetchall()
     cursor.close()
     
     history = []
     for row in rows:
         history.append({
-            "request_id": row[0],
+            "delivery_id": row[0],
             "food_name": row[1],
-            "restaurant_name": row[2],
+            "quantity": row[2],
             "status": row[3],
-            "request_date": str(row[4])
+            "partner_name": row[4] or "Unassigned",
+            "assigned_at": str(row[5]) if row[5] else None,
+            "restaurant_name": row[6]
         })
     return history
 
