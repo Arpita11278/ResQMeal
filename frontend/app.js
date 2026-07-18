@@ -1,5 +1,5 @@
 // Base URL of our Flask Backend
-const API_URL = "http://127.0.0.1:5000";
+const API_URL = "https://resqmeal-ofhl.onrender.com";
 
 // Simple navigation logic (Single Page App style)
 function showSection(sectionId) {

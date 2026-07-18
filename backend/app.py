@@ -28,7 +28,7 @@ app.register_blueprint(admin_bp)
 
 @app.route("/")
 def home():
-    return "ResQMeal API Running Successfully"
+    return {"status": "ResQMeal API is live and running!"}
 
 @app.route("/users")
 def users():
